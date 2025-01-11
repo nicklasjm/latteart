@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/components/ui/use-toast"
+import { mutate } from 'swr';
 
 export default function ImageUpload() {
   const [file, setFile] = useState<File | null>(null)
@@ -28,46 +29,52 @@ export default function ImageUpload() {
   }
 
   const handleUpload = async () => {
-    if (!file) return
+    if (!file) return;
 
-    setUploading(true)
-    const formData = new FormData()
-    formData.append('file', file)
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
 
     try {
-      const limitResponse = await fetch('/api/upload-limit', { method: 'POST' })
-      const limitData = await limitResponse.json()
+      const limitResponse = await fetch('/api/upload-limit', { method: 'POST' });
+      const limitData = await limitResponse.json();
 
       if (limitResponse.status === 429) {
-        throw new Error(limitData.error)
+        throw new Error(limitData.error);
       }
 
       const response = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
-      })
+      });
 
-      if (!response.ok) throw new Error('Upload failed')
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Upload failed');
+      }
 
-      const data = await response.json()
+      const data = await response.json();
 
       toast({
         title: "Success",
-        description: "Image uploaded and analyzed successfully",
-      })
-      setFile(null)
-      setRemainingUploads(limitData.remainingUploads)
+        description: `Image uploaded and analyzed: ${data.description}`,
+      });
+      setFile(null);
+      setRemainingUploads(limitData.remainingUploads);
+      
+      // Trigger a refresh of the ImageCarousel
+      mutate('/api/images');
     } catch (error) {
-      console.error('Upload error:', error)
+      console.error('Upload error:', error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to upload image",
         variant: "destructive",
-      })
+      });
     } finally {
-      setUploading(false)
+      setUploading(false);
     }
-  }
+  };
 
   return (
     <div className="space-y-4 max-w-md mx-auto">

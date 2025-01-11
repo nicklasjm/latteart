@@ -57,15 +57,15 @@ export async function POST(request: Request) {
 
     const description = response.choices[0]?.message?.content || 'No description available'
 
-    // Save image data to database (mock implementation)
     // In a real application, you would save this data to a database
-    console.log('Saved to database:', {
+    // For now, we'll just return the data
+    const imageData = {
       id: uuidv4(),
       url: `/uploads/${filename}`,
       description,
-    })
+    }
 
-    return NextResponse.json({ success: true, filename, description })
+    return NextResponse.json(imageData)
   } catch (error) {
     console.error('Error processing upload:', error)
     return NextResponse.json({ error: 'Failed to process upload' }, { status: 500 })

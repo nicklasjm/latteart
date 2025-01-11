@@ -62,18 +62,32 @@ export default function ImageCarousel() {
   }
 
   return (
-    <Slider {...settings}>
-      {images.map((image) => (
-        <div key={image.id} className="px-2">
-          <Card>
-            <CardContent className="p-4">
-              <Image src={image.url} alt={image.description} width={300} height={200} className="w-full h-48 object-cover mb-4 rounded" />
-              <p className="text-sm">{image.description}</p>
-            </CardContent>
-          </Card>
-        </div>
-      ))}
-    </Slider>
+    <div className="w-full max-w-4xl mx-auto">
+      {images && images.length > 0 ? (
+        <Slider {...settings}>
+          {images.map((image) => (
+            <div key={image.id} className="px-2">
+              <Card>
+                <CardContent className="p-4">
+                  <div className="relative w-full h-48 mb-4">
+                    <Image 
+                      src={image.url} 
+                      alt={image.description} 
+                      layout="fill" 
+                      objectFit="cover"
+                      className="rounded"
+                    />
+                  </div>
+                  <p className="text-sm">{image.description}</p>
+                </CardContent>
+              </Card>
+            </div>
+          ))}
+        </Slider>
+      ) : (
+        <p className="text-center text-gray-500">No images uploaded yet.</p>
+      )}
+    </div>
   )
 }
 
