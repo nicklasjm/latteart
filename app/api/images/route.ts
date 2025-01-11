@@ -1,25 +1,27 @@
-import { readdir, mkdir } from 'fs/promises'
-import path from 'path'
+import { v2 as cloudinary } from 'cloudinary'
 import { NextResponse } from 'next/server'
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+})
 
 export async function GET() {
   try {
-    const uploadsDir = path.join(process.cwd(), 'public/uploads')
-    
-    await mkdir(uploadsDir, { recursive: true })
-    
-    const files = await readdir(uploadsDir)
-    console.log('Found files:', files)
-    
-    const images = files.map(file => ({
-      path: `/uploads/${file}`,
-      description: 'Your stored description here'
+    const { resources } = await cloudinary.search
+      .expression('folder:uploads')
+      .sort_by('created_at', 'desc')
+      .execute()
+
+    const images = resources.map((resource: any) => ({
+      path: resource.secure_url,
+      description: 'Image description' // You'll need to store descriptions separately
     }))
 
-    console.log('Returning images:', images)
     return NextResponse.json(images)
   } catch (error) {
-    console.error('Error reading images:', error)
+    console.error('Error fetching images:', error)
     return NextResponse.json({ error: 'Failed to fetch images' }, { status: 500 })
   }
 }

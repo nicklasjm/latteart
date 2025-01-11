@@ -1,48 +1,38 @@
+import { v2 as cloudinary } from 'cloudinary'
 import { NextResponse } from 'next/server'
-import { writeFile, mkdir } from 'fs/promises'
-import path from 'path'
-import sharp from 'sharp'
-import { v4 as uuidv4 } from 'uuid'
 import OpenAI from 'openai'
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+})
 
 export async function POST(req: Request) {
   try {
     const formData = await req.formData()
     const file = formData.get('file') as File
     if (!file) {
-      console.log('No file received')
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 })
     }
 
-    console.log('File received:', file.name, 'Size:', file.size)
-
+    // Convert file to base64
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
+    const base64File = `data:${file.type};base64,${buffer.toString('base64')}`
 
-    const uploadsDir = path.join(process.cwd(), 'public/uploads')
-    console.log('Uploads directory:', uploadsDir)
+    // Upload to Cloudinary
+    const uploadResponse = await new Promise((resolve, reject) => {
+      cloudinary.uploader.upload(base64File, {
+        folder: 'uploads'
+      }, (error, result) => {
+        if (error) reject(error)
+        else resolve(result)
+      })
+    })
 
-    try {
-      await mkdir(uploadsDir, { recursive: true })
-      console.log('Directory created/verified')
-    } catch (mkdirError) {
-      console.error('mkdir error:', mkdirError)
-      throw mkdirError
-    }
-
-    const uniqueName = `${Date.now()}-${file.name}`
-    const filePath = path.join(uploadsDir, uniqueName)
-    console.log('Attempting to save to:', filePath)
-
-    try {
-      await writeFile(filePath, buffer)
-      console.log('File written successfully')
-    } catch (writeError) {
-      console.error('writeFile error:', writeError)
-      throw writeError
-    }
-
-    // Add error handling for OpenAI
+    // Get image analysis from OpenAI
     let description = ''
     try {
       const openai = new OpenAI()
@@ -56,7 +46,7 @@ export async function POST(req: Request) {
               {
                 type: "image_url",
                 image_url: {
-                  url: `data:${file.type};base64,${buffer.toString('base64')}`
+                  url: base64File
                 }
               }
             ],
@@ -65,20 +55,17 @@ export async function POST(req: Request) {
         max_tokens: 500,
       })
       description = response.choices[0].message.content || ''
-      console.log('OpenAI response received')
     } catch (openaiError) {
       console.error('OpenAI error:', openaiError)
-      // Continue without description if OpenAI fails
       description = 'Image description unavailable'
     }
 
     return NextResponse.json({ 
       success: true, 
-      imagePath: `/uploads/${uniqueName}`,
+      imagePath: (uploadResponse as any).secure_url,
       description 
     })
   } catch (error) {
-    // Log the full error
     console.error('Upload error details:', error)
     return NextResponse.json({ 
       error: 'Upload failed', 
