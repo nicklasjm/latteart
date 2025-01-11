@@ -23,52 +23,51 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 })
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer())
-    const filename = `${uuidv4()}.webp`
+    const bytes = await file.arrayBuffer()
+    const buffer = Buffer.from(bytes)
 
-    // Compress and convert image to WebP
-    const compressedImageBuffer = await sharp(buffer)
-      .resize(800) // Resize to max width of 800px
-      .webp({ quality: 80 }) // Convert to WebP with 80% quality
-      .toBuffer()
+    // Create uploads directory if it doesn't exist
+    const uploadsDir = path.join(process.cwd(), 'public/uploads')
+    await fs.promises.mkdir(uploadsDir, { recursive: true })
 
-    // Save the compressed image
-    const uploadDir = path.join(process.cwd(), 'public/uploads')
-    await writeFile(path.join(uploadDir, filename), compressedImageBuffer)
+    // Save file with unique name
+    const uniqueName = `${Date.now()}-${file.name}`
+    const filePath = path.join(uploadsDir, uniqueName)
+    await writeFile(filePath, buffer)
 
-    // Analyze image with ChatGPT
+    // Get ChatGPT analysis
     const response = await openai.chat.completions.create({
       model: "gpt-4-vision-preview",
       messages: [
         {
           role: "user",
           content: [
-            { type: "text", text: "Describe this image in a concise manner." },
+            { type: "text", text: "Describe this image in detail" },
             {
               type: "image_url",
               image_url: {
-                url: `data:image/webp;base64,${compressedImageBuffer.toString('base64')}`,
-              },
-            },
+                url: `data:${file.type};base64,${buffer.toString('base64')}`
+              }
+            }
           ],
         },
       ],
+      max_tokens: 500,
     })
 
-    const description = response.choices[0]?.message?.content || 'No description available'
+    const description = response.choices[0].message.content
 
-    // In a real application, you would save this data to a database
-    // For now, we'll just return the data
-    const imageData = {
-      id: uuidv4(),
-      url: `/uploads/${filename}`,
-      description,
-    }
+    // Save to Redis or your database
+    // ... your storage logic here ...
 
-    return NextResponse.json(imageData)
+    return NextResponse.json({ 
+      success: true, 
+      imagePath: `/uploads/${uniqueName}`,
+      description 
+    })
   } catch (error) {
-    console.error('Error processing upload:', error)
-    return NextResponse.json({ error: 'Failed to process upload' }, { status: 500 })
+    console.error('Upload error:', error)
+    return NextResponse.json({ error: 'Upload failed' }, { status: 500 })
   }
 }
 
