@@ -28,7 +28,7 @@ export async function POST(req: Request) {
         folder: 'uploads'
       }, (error, result) => {
         if (error) reject(error)
-        else resolve(result)
+        else resolve(result) 
       })
     })
 
