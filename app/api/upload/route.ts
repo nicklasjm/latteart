@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { writeFile } from 'fs/promises'
+import { writeFile, mkdir } from 'fs/promises'
 import path from 'path'
 import sharp from 'sharp'
 import { v4 as uuidv4 } from 'uuid'
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
 
     // Create uploads directory if it doesn't exist
     const uploadsDir = path.join(process.cwd(), 'public/uploads')
-    await fs.promises.mkdir(uploadsDir, { recursive: true })
+    await mkdir(uploadsDir, { recursive: true })
 
     // Save file with unique name
     const uniqueName = `${Date.now()}-${file.name}`

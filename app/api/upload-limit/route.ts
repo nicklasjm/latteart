@@ -6,7 +6,7 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 })
 
-const UPLOAD_LIMIT = 5
+const UPLOAD_LIMIT = 50
 const RESET_PERIOD = 24 * 60 * 60 // 24 hours in seconds
 
 export async function GET(request: Request) {

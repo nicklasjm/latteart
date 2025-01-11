@@ -1,4 +1,4 @@
-import { readdir } from 'fs/promises'
+import { readdir, mkdir } from 'fs/promises'
 import path from 'path'
 import { NextResponse } from 'next/server'
 
@@ -6,16 +6,13 @@ export async function GET() {
   try {
     const uploadsDir = path.join(process.cwd(), 'public/uploads')
     
-    // Create directory if it doesn't exist
-    await fs.promises.mkdir(uploadsDir, { recursive: true })
+    await mkdir(uploadsDir, { recursive: true })
     
     const files = await readdir(uploadsDir)
     
-    // Get image data from your Redis or database
-    // This is where you'd match up images with their descriptions
     const images = files.map(file => ({
       path: `/uploads/${file}`,
-      description: 'Your stored description here' // Get this from your database
+      description: 'Your stored description here'
     }))
 
     return NextResponse.json(images)
