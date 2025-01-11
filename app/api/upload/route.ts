@@ -20,6 +20,7 @@ export async function POST(request: Request) {
     const file = formData.get('file') as File | null
 
     if (!file) {
+      console.log('No file received')
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 })
     }
 
@@ -34,6 +35,8 @@ export async function POST(request: Request) {
     const uniqueName = `${Date.now()}-${file.name}`
     const filePath = path.join(uploadsDir, uniqueName)
     await writeFile(filePath, buffer)
+    
+    console.log('File saved:', uniqueName)  // Log the saved file
 
     // Get ChatGPT analysis
     const response = await openai.chat.completions.create({

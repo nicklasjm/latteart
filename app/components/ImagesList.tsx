@@ -18,6 +18,7 @@ export default function ImagesList() {
         const response = await fetch('/api/images')
         if (!response.ok) throw new Error('Failed to fetch images')
         const data = await response.json()
+        console.log('Fetched images:', data)
         setImages(data)
       } catch (error) {
         console.error('Fetch error:', error)
@@ -33,15 +34,17 @@ export default function ImagesList() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {images.length === 0 && <p>No images found</p>}
       {images.map((image, index) => (
         <div key={index} className="border rounded-lg p-4">
-          <Image
-            src={image.path}
-            alt={image.description}
-            width={300}
-            height={300}
-            className="object-cover w-full h-64"
-          />
+          <div className="relative w-full h-64">
+            <Image
+              src={image.path}
+              alt={image.description}
+              fill
+              className="object-cover rounded-lg"
+            />
+          </div>
           <p className="mt-2 text-sm text-gray-600">{image.description}</p>
         </div>
       ))}

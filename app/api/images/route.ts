@@ -9,12 +9,14 @@ export async function GET() {
     await mkdir(uploadsDir, { recursive: true })
     
     const files = await readdir(uploadsDir)
+    console.log('Found files:', files)
     
     const images = files.map(file => ({
       path: `/uploads/${file}`,
       description: 'Your stored description here'
     }))
 
+    console.log('Returning images:', images)
     return NextResponse.json(images)
   } catch (error) {
     console.error('Error reading images:', error)
