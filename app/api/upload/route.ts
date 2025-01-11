@@ -1,13 +1,6 @@
-import { v2 as cloudinary } from 'cloudinary'
+import cloudinary from '@/utils/cloudinary'
 import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-})
 
 export async function POST(req: Request) {
   try {
@@ -28,7 +21,7 @@ export async function POST(req: Request) {
         folder: 'uploads'
       }, (error, result) => {
         if (error) reject(error)
-        else resolve(result) 
+        else resolve(result)
       })
     })
 
