@@ -1,4 +1,4 @@
-import cloudinary from '@/utils/cloudinary'
+import { v2 as cloudinary } from 'cloudinary'
 import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
 
