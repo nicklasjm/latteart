@@ -1,48 +1,60 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useCallback } from 'react'
+import Script from 'next/script'
+
+declare global {
+  interface Window {
+    cloudinary: any
+  }
+}
 
 export default function UploadButton() {
-  const [uploading, setUploading] = useState(false)
+  const handleUpload = useCallback(() => {
+    // Create and open the upload widget
+    const widget = window.cloudinary.createUploadWidget(
+      {
+        cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+        uploadPreset: 'my_uploads', // Create this in your Cloudinary dashboard
+        folder: 'uploads',
+      },
+      async (error: any, result: any) => {
+        if (!error && result && result.event === 'success') {
+          // Image was uploaded to Cloudinary successfully
+          const imageUrl = result.info.secure_url
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files?.[0]) return
+          // Now send the URL to your API for OpenAI analysis
+          try {
+            const response = await fetch('/api/analyze', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ imageUrl }),
+            })
 
-    setUploading(true)
-    try {
-      const formData = new FormData()
-      formData.append('file', e.target.files[0])
-
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!response.ok) throw new Error('Upload failed')
-
-      const data = await response.json()
-      
-      // Trigger a refresh of your images list or add the new image to state
-      // This depends on how you're managing state in your application
-      window.location.reload() // Simple solution, but not ideal
-      
-    } catch (error) {
-      console.error('Upload error:', error)
-      alert('Upload failed')
-    } finally {
-      setUploading(false)
-    }
-  }
+            if (!response.ok) throw new Error('Failed to analyze image')
+            
+            // Refresh the images list or handle the response as needed
+            window.location.reload()
+          } catch (error) {
+            console.error('Analysis error:', error)
+          }
+        }
+      }
+    )
+    widget.open()
+  }, [])
 
   return (
-    <div>
-      <input
-        type="file"
-        accept="image/*"
-        onChange={handleUpload}
-        disabled={uploading}
-      />
-      {uploading && <p>Uploading...</p>}
-    </div>
+    <>
+      <Script src="https://upload-widget.cloudinary.com/global/all.js" />
+      <button
+        onClick={handleUpload}
+        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+      >
+        Upload Image
+      </button>
+    </>
   )
 } 
